@@ -29,7 +29,6 @@ Prerequisites:
 
 Error Handling:
     - Catches and logs any errors during loading
-    - Continues processing other tables if one fails (not implemented yet)
 
 Performance Notes:
     - Uses TRUNCATE for fast table clearing
@@ -187,7 +186,6 @@ EXCEPTION
     WHEN OTHERS THEN
         -- Log any errors that occurred during the process
         RAISE NOTICE 'Error occurred during Bronze loading: %', SQLERRM;
-        -- Optionally, you could raise the exception or handle it differently
 END;
 $$;
 
