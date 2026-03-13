@@ -205,5 +205,6 @@ EXCEPTION
 END;
 $$;
 
-
+-- Execute the stored procedure to load the Bronze layer
+RAISE NOTICE 'Executing stored procedure to load Bronze layer...';
 CALL bronze.load_bronze();
