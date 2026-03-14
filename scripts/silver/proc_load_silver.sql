@@ -28,7 +28,7 @@ DECLARE
     batch_end_time TIMESTAMP;
 BEGIN
 
-batch_start_time := now();
+batch_start_time := clock_timestamp();
 
 RAISE NOTICE '================================================';
 RAISE NOTICE 'Loading Silver Layer';
@@ -40,7 +40,7 @@ RAISE NOTICE 'Loading CRM Tables';
 -- crm_cust_info
 -- =====================================================
 
-start_time := now();
+start_time := clock_timestamp();
 TRUNCATE TABLE silver.crm_cust_info;
 
 INSERT INTO silver.crm_cust_info (
@@ -76,14 +76,14 @@ FROM (
 ) t
 WHERE flag_last = 1;
 
-end_time := now();
+end_time := clock_timestamp();
 RAISE NOTICE 'crm_cust_info duration: % seconds', EXTRACT(EPOCH FROM (end_time - start_time));
 
 -- =====================================================
 -- crm_prd_info
 -- =====================================================
 
-start_time := now();
+start_time := clock_timestamp();
 
 TRUNCATE TABLE silver.crm_prd_info;
 
@@ -114,14 +114,14 @@ SELECT
     (LEAD(prd_start_dt) OVER (PARTITION BY prd_key ORDER BY prd_start_dt) - INTERVAL '1 day')::DATE AS prd_end_dt --Set prd_end_dt to one day before the next prd_start_dt for the same prd_key, or NULL if it's the last record
 FROM bronze.crm_prd_info;
 
-end_time := now();
+end_time := clock_timestamp();
 RAISE NOTICE 'crm_prd_info duration: % seconds', EXTRACT(EPOCH FROM (end_time - start_time));
 
 -- =====================================================
 -- crm_sales_details
 -- =====================================================
 
-start_time := now();
+start_time := clock_timestamp();
 
 TRUNCATE TABLE silver.crm_sales_details;
 
@@ -143,29 +143,29 @@ SELECT
     CASE
         WHEN sls_order_dt = 0 OR length(sls_order_dt::text) != 8 THEN NULL
         ELSE TO_DATE(sls_order_dt::text, 'YYYYMMDD')
-    END,
+    END AS sls_order_dt,
     CASE
         WHEN sls_ship_dt = 0 OR length(sls_ship_dt::text) != 8 THEN NULL
         ELSE TO_DATE(sls_ship_dt::text, 'YYYYMMDD')
-    END,
+    END AS sls_ship_dt,
     CASE
         WHEN sls_due_dt = 0 OR length(sls_due_dt::text) != 8 THEN NULL
         ELSE TO_DATE(sls_due_dt::text, 'YYYYMMDD')
-    END,
+    END AS sls_due_dt,
     CASE
         WHEN sls_sales IS NULL OR sls_sales <= 0 OR sls_sales != sls_quantity * ABS(sls_price)
         THEN sls_quantity * ABS(sls_price)
         ELSE sls_sales
-    END,
+    END AS sls_sales,
     sls_quantity,
     CASE
         WHEN sls_price IS NULL OR sls_price <= 0
-        THEN sls_sales / NULLIF(sls_quantity, 0)
+        THEN sls_sales / NULLIF(sls_quantity, 0) -- Avoid division by zero
         ELSE sls_price
-    END
+    END AS sls_price
 FROM bronze.crm_sales_details;
 
-end_time := now();
+end_time := clock_timestamp();
 RAISE NOTICE 'crm_sales_details duration: % seconds', EXTRACT(EPOCH FROM (end_time - start_time));
 
 -- =====================================================
@@ -178,7 +178,7 @@ RAISE NOTICE 'Loading ERP Tables';
 -- erp_cust_az12
 -- =====================================================
 
-start_time := now();
+start_time := clock_timestamp();
 
 TRUNCATE TABLE silver.erp_cust_az12;
 
@@ -203,14 +203,14 @@ SELECT
     END
 FROM bronze.erp_cust_az12;
 
-end_time := now();
+end_time := clock_timestamp();
 RAISE NOTICE 'erp_cust_az12 duration: % seconds', EXTRACT(EPOCH FROM (end_time - start_time));
 
 -- =====================================================
 -- erp_loc_a101
 -- =====================================================
 
-start_time := now();
+start_time := clock_timestamp();
 
 TRUNCATE TABLE silver.erp_loc_a101;
 
@@ -228,24 +228,24 @@ SELECT
     END
 FROM bronze.erp_loc_a101;
 
-end_time := now();
+end_time := clock_timestamp();
 RAISE NOTICE 'erp_loc_a101 duration: % seconds', EXTRACT(EPOCH FROM (end_time - start_time));
 
 -- =====================================================
 -- erp_px_cat_g1v2
 -- =====================================================
 
-start_time := now();
+start_time := clock_timestamp();
 
 TRUNCATE TABLE silver.erp_px_cat_g1v2;
 
 INSERT INTO silver.erp_px_cat_g1v2
 SELECT * FROM bronze.erp_px_cat_g1v2;
 
-end_time := now();
+end_time := clock_timestamp();
 RAISE NOTICE 'erp_px_cat_g1v2 duration: % seconds', EXTRACT(EPOCH FROM (end_time - start_time));
 
-batch_end_time := now();
+batch_end_time := clock_timestamp();
 
 RAISE NOTICE '==========================================';
 RAISE NOTICE 'Loading Silver Layer Completed';
@@ -254,9 +254,8 @@ EXTRACT(EPOCH FROM (batch_end_time - batch_start_time));
 RAISE NOTICE '==========================================';
 
 EXCEPTION
-WHEN OTHERS THEN
-RAISE NOTICE 'ERROR OCCURRED: %', SQLERRM;
-
+    WHEN OTHERS THEN
+         RAISE NOTICE 'Error occurred during Silver loading: %', SQLERRM;
 END;
 $$;
 
