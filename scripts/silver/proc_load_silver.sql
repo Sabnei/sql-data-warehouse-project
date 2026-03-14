@@ -99,19 +99,19 @@ INSERT INTO silver.crm_prd_info (
 )
 SELECT
     prd_id,
-    REPLACE(SUBSTRING(prd_key, 1, 5), '-', '_') AS cat_id,
-    SUBSTRING(prd_key, 7) AS prd_key,
+    REPLACE(SUBSTRING(prd_key, 1, 5), '-', '_') AS cat_id, --Extract category from prd_key and replace '-' with '_'
+    SUBSTRING(prd_key, 7) AS prd_key, --Extract product code from prd_key
     prd_nm,
-    COALESCE(prd_cost, 0) AS prd_cost,
-    CASE
-        WHEN UPPER(TRIM(prd_line)) = 'M' THEN 'Mountain'
-        WHEN UPPER(TRIM(prd_line)) = 'R' THEN 'Road'
-        WHEN UPPER(TRIM(prd_line)) = 'S' THEN 'Other Sales'
-        WHEN UPPER(TRIM(prd_line)) = 'T' THEN 'Touring'
+    COALESCE(prd_cost, 0) AS prd_cost, --Replace NULL prd_cost with 0
+    CASE UPPER(TRIM(prd_line)) 
+        WHEN 'M' THEN 'Mountain'
+        WHEN 'R' THEN 'Road'
+        WHEN 'S' THEN 'Other Sales'
+        WHEN 'T' THEN 'Touring'
         ELSE 'n/a'
     END AS prd_line,
-    prd_start_dt::TIMESTAMP AS prd_start_dt,
-    (LEAD(prd_start_dt) OVER (PARTITION BY prd_key ORDER BY prd_start_dt) - INTERVAL '1 day')::TIMESTAMP AS prd_end_dt
+    prd_start_dt::DATE AS prd_start_dt,
+    (LEAD(prd_start_dt) OVER (PARTITION BY prd_key ORDER BY prd_start_dt) - INTERVAL '1 day')::DATE AS prd_end_dt --Set prd_end_dt to one day before the next prd_start_dt for the same prd_key, or NULL if it's the last record
 FROM bronze.crm_prd_info;
 
 end_time := now();
