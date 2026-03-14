@@ -38,8 +38,8 @@ CREATE TABLE silver.crm_prd_info (
     prd_nm          VARCHAR(50),
     prd_cost        INT,
     prd_line        VARCHAR(50),
-    prd_start_dt    TIMESTAMP,
-    prd_end_dt      TIMESTAMP,
+    prd_start_dt    DATE,
+    prd_end_dt      DATE,
     dwh_create_date TIMESTAMPTZ DEFAULT now()
 );
 
