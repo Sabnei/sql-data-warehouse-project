@@ -262,5 +262,3 @@ EXCEPTION
          RAISE NOTICE 'Error occurred during Silver loading: %', SQLERRM;
 END;
 $$;
-
-CALL silver.load_silver();

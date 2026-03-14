@@ -35,6 +35,9 @@ Performance Notes:
     - Measures and logs load times for each table
     - Batch timing for overall process
 
+Usage Example:
+    CALL bronze.load_bronze();
+
 ===============================================================================
 */
 
@@ -170,7 +173,7 @@ BEGIN
     -- =====================================================
     -- erp_loc_a101
     -- =====================================================
-    
+
     start_time := clock_timestamp();
 
     TRUNCATE TABLE bronze.erp_px_cat_g1v2;
@@ -203,7 +206,3 @@ EXCEPTION
         RAISE NOTICE 'Error occurred during Bronze loading: %', SQLERRM;
 END;
 $$;
-
--- Execute the stored procedure to load the Bronze layer
-RAISE NOTICE 'Executing stored procedure to load Bronze layer...';
-CALL bronze.load_bronze();
